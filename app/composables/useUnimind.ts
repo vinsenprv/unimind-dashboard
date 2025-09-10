@@ -24,12 +24,48 @@ function toNum(v: any): number {
   return Number.isFinite(n) ? n : NaN
 }
 
-function firstKey(obj: any, candidates: string[]) {
-  const lower: Record<string, any> = {}
-  for (const [k, v] of Object.entries(obj || {})) lower[k.toLowerCase()] = v
-  for (const c of candidates) {
-    const hit = lower[c.toLowerCase()]
-    if (hit !== undefined) return hit
+// Normalisasi nama kunci: lowercase + hapus selain huruf/angka
+function normKey(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '')
+}
+
+// Ambil NILAI PERTAMA yang tidak kosong, cocokkan dengan normalisasi kunci.
+// Contoh: "event_last", "Event Last", "eventLast" -> sama-sama "eventlast"
+function pickKey(obj: any, candidates: string[]) {
+  const entries = Object.entries(obj || {}).map(([k, v]) => ({
+    rawKey: k,
+    norm: normKey(k),
+    val: v
+  }))
+
+  // exact match (normalized)
+  for (const name of candidates) {
+    const n = normKey(name)
+    const hit = entries.find(e => e.norm === n)
+    if (!hit) continue
+    const v = hit.val
+    if (v === undefined || v === null) continue
+    if (typeof v === 'string') {
+      const s = v.trim()
+      if (s !== '' && s.toLowerCase() !== 'null' && s.toLowerCase() !== 'undefined') return s
+      continue
+    }
+    return v
+  }
+
+  // loose: "mengandung" (normalized)
+  for (const name of candidates) {
+    const n = normKey(name)
+    const hit = entries.find(e => e.norm.includes(n))
+    if (!hit) continue
+    const v = hit.val
+    if (v === undefined || v === null) continue
+    if (typeof v === 'string') {
+      const s = v.trim()
+      if (s !== '' && s.toLowerCase() !== 'null' && s.toLowerCase() !== 'undefined') return s
+      continue
+    }
+    return v
   }
   return undefined
 }
@@ -56,6 +92,19 @@ function parseDateSmart(s: any): string {
   return ''
 }
 
+// (opsional) parser datetime "YYYY-MM-DD HH:mm:ss" atau ISO
+function parseDateTimeSmart(s: any): string {
+  if (!s) return ''
+  const raw = String(s).trim()
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+  if (m) {
+    const [_, Y, M, D, h, mi, ss] = m
+    return `${Y}-${M}-${D} ${h}:${mi}${ss ? `:${ss}` : ''}`
+  }
+  if (!Number.isNaN(Date.parse(raw))) return raw
+  return parseDateSmart(raw)
+}
+
 function normalizeStatus(s: string = '') {
   const v = s.toLowerCase()
   if (v.includes('selesai') || v.includes('resolved') || v.includes('done')) return 'SELESAI'
@@ -64,28 +113,61 @@ function normalizeStatus(s: string = '') {
   return s.toUpperCase()
 }
 
+function parseLatLng(row: any) {
+  const lat = toNum(pickKey(row, ['lat','latitude','lintang']))
+  const lng = toNum(pickKey(row, ['lng','lon','long','longitude','bujur']))
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
+
+  const latlon = pickKey(row, ['latlon','lat_long','latlng'])
+  if (typeof latlon === 'string') {
+    const [a,b] = latlon.split(',')
+    return { lat: toNum(a), lng: toNum(b) }
+  }
+  if (Array.isArray(latlon)) return { lat: toNum(latlon[0]), lng: toNum(latlon[1]) }
+  return { lat: NaN, lng: NaN }
+}
+
 function transform(row: any): Incident {
-  const lat =
-    toNum(firstKey(row, ['lat', 'latitude', 'lintang'])) ??
-    (Array.isArray(row.latlng) ? toNum(row.latlng[0]) : NaN)
-  const lng =
-    toNum(firstKey(row, ['lng', 'lon', 'long', 'longitude', 'bujur'])) ??
-    (Array.isArray(row.latlng) ? toNum(row.latlng[1]) : NaN)
+  const { lat, lng } = parseLatLng(row)
 
-  const province = firstKey(row, ['provinsi', 'province', 'prov']) || ''
-  const city = firstKey(row, ['kota', 'kabupaten', 'kab/kota', 'city']) || ''
-  const type = firstKey(row, ['jenis kejadian', 'jenis', 'type']) || ''
-  const statusRaw = firstKey(row, ['status', 'keterangan_status', 'state']) || ''
+  const province = (pickKey(row, ['provinsi','province','prov']) || '') as string
+  const city = (pickKey(row, ['kabkot','kota','kabupaten','kab/kota','kota/kabupaten','city']) || '') as string
+
+  // 🔹 Jenis kejadian (tangkap variasi: event_last/eventLast/dll + sinonim)
+  const kindRaw = pickKey(row, [
+    'event_last','event_continue','event',
+    'jenis kejadian','jenis','type','kejadian','insiden','peristiwa','aksi'
+  ])
+  const kind = kindRaw ? String(kindRaw).trim() : ''
+
+  // 🔹 Status
+  const statusRaw = pickKey(row, ['status_last','status_continue','status','keterangan_status','state']) || ''
   const status = normalizeStatus(String(statusRaw))
-  const date = parseDateSmart(firstKey(row, ['tanggal', 'date', 'waktu', 'created_at']))
-  const updated_at = parseDateSmart(firstKey(row, ['update terakhir', 'updated_at', 'update']))
-  const url = firstKey(row, ['url', 'link', 'article_url'])
-  const description = firstKey(row, ['fasilitas terdampak', 'keterangan', 'deskripsi'])
-  const title = `${province || 'Lokasi tidak diketahui'}${city ? ', ' + city : ''}`
-  const id = String(firstKey(row, ['id', 'kode'])) ||
-    `${province}-${city}-${type}-${date}-${lat}-${lng}`
 
-  return { id, title, province, city, type, status, date, updated_at, lat, lng, url, description }
+  // 🔹 Tanggal & update
+  const date = parseDateSmart(pickKey(row, ['tanggal','date','waktu','created_at']))
+  const updated_at = parseDateTimeSmart(pickKey(row, ['last_updated','update terakhir','updated_at','update']))
+
+  // 🔹 Fasilitas terdampak (gabung jenis + detail)
+  const fasJenis  = pickKey(row, ['fasum_terdampak_last','fasum_terdampak_continue','fasilitas terdampak','fasum_terdampak'])
+  const fasDetail = pickKey(row, ['fasum_detail_last','fasum_detail_continue','fasum_detail'])
+  let description = pickKey(row, ['keterangan','deskripsi']) as string | undefined
+  if (!description) {
+    if (fasJenis && fasDetail) description = `${fasJenis}: ${fasDetail}`
+    else description = (fasJenis as string) || (fasDetail as string) || ''
+  }
+
+  // 🔹 Link
+  const url = pickKey(row, ['link_article_last','link_article_continue','article_url','url','link'])
+
+  const safeProvince = province.trim()
+  const safeCity = city.trim()
+  const title = `${safeProvince || 'Lokasi tidak diketahui'}${safeCity ? ', ' + safeCity : ''}`
+
+  const rawId = pickKey(row, ['id','kode','articleId_last','articleId_continue'])
+  const id = rawId != null && rawId !== '' ? String(rawId) : `${safeProvince}-${safeCity}-${kind}-${date}-${lat}-${lng}`
+
+  return { id, title, province: safeProvince, city: safeCity, type: kind, status, date, updated_at, lat, lng, url, description }
 }
 
 export const useUnimind = () => {
@@ -125,6 +207,7 @@ export const useUnimind = () => {
     const rencana = raw.value.filter(d => d.status === 'RENCANA').length
     return { total, berlangsung, selesai, rencana }
   })
+  console.log('contoh:', raw.value.slice(0,3))
 
   return { raw, fetchRaw, loading, error, uniqueTypes, uniqueStatuses, countByStatus }
 }
