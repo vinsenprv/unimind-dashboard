@@ -104,7 +104,7 @@ function normalizeStatus(s: string = '') {
   const v = s.toLowerCase()
   if (v.includes('selesai') || v.includes('resolved') || v.includes('done')) return 'SELESAI'
   if (v.includes('rencana') || v.includes('plan')) return 'RENCANA'
-  if (v.includes('sedang') || v.includes('berlangsung') || v.includes('ongoing') || v.includes('on going')) return 'SEDANG BERLANGSUNG'
+  if (v.includes('sedang') || v.includes('berlangsung') || v.includes('ongoing') || v.includes('on going')) return 'ON GOING'
   return s.toUpperCase()
 }
 
@@ -204,7 +204,7 @@ export const useUnimind = () => {
 
   const countByStatus = computed(() => {
     const total       = raw.value.length
-    const berlangsung = raw.value.filter(d => normalizeStatus(d.status) === 'SEDANG BERLANGSUNG').length
+    const berlangsung = raw.value.filter(d => normalizeStatus(d.status) === 'ON GOING').length
     const selesai     = raw.value.filter(d => normalizeStatus(d.status) === 'SELESAI').length
     const rencana     = raw.value.filter(d => normalizeStatus(d.status) === 'RENCANA').length
     return { total, berlangsung, selesai, rencana }

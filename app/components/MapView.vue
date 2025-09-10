@@ -31,24 +31,24 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-function canonStatus(s: any = ''): 'SELESAI'|'RENCANA'|'SEDANG BERLANGSUNG'|'LAINNYA' {
+function canonStatus(s: any = ''): 'SELESAI'|'RENCANA'|'ON GOING'|'LAINNYA' {
   const v = String(s || '').toLowerCase().trim()
   if (/(selesai|resolved|done)/.test(v)) return 'SELESAI'
   if (/(rencana|plan|planned)/.test(v)) return 'RENCANA'
-  if (/(sedang|berlangsung|ongoing|on ?going|proses|aktif)/.test(v)) return 'SEDANG BERLANGSUNG'
+  if (/(sedang|berlangsung|ongoing|on ?going|proses|aktif)/.test(v)) return 'ON GOING'
   return 'LAINNYA'
 }
 function badgeClass(status: string) {
   switch (canonStatus(status)) {
     case 'SELESAI':            return 'badge success'
     case 'RENCANA':            return 'badge info'
-    case 'SEDANG BERLANGSUNG': return 'badge warn'
+    case 'ON GOING': return 'badge warn'
     default:                   return 'badge'
   }
 }
 function statusColor(status?: string) {
   switch (canonStatus(status)) {
-    case 'SEDANG BERLANGSUNG': return '#f59e0b' // oranye
+    case 'ON GOING': return '#f59e0b' // oranye
     case 'SELESAI':            return '#22c55e' // hijau
     case 'RENCANA':            return '#3b82f6' // biru
     default:                   return '#6b7280' // abu-abu
@@ -111,7 +111,7 @@ watch(() => props.items, (list) => fitToItems(list), { deep: false })
     <!-- Legend warna -->
     <LControl position="bottomleft">
       <div class="legend">
-        <div class="item"><span class="dot" style="background:#f59e0b"></span> Sedang berlangsung</div>
+        <div class="item"><span class="dot" style="background:#f59e0b"></span> On Going</div>
         <div class="item"><span class="dot" style="background:#22c55e"></span> Selesai</div>
         <div class="item"><span class="dot" style="background:#3b82f6"></span> Rencana</div>
         <div class="item"><span class="dot" style="background:#6b7280"></span> Lainnya</div>

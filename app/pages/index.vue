@@ -16,7 +16,7 @@ function canonStatus(s = '') {
   const v = s.toLowerCase().trim()
   if (/(selesai|resolved|done)/.test(v)) return 'SELESAI'
   if (/(rencana|plan|planned)/.test(v)) return 'RENCANA'
-  if (/(sedang|berlangsung|ongoing|on ?going|proses|aktif)/.test(v)) return 'SEDANG BERLANGSUNG'
+  if (/(sedang|berlangsung|ongoing|on ?going|proses|aktif)/.test(v)) return 'ON GOING'
   return 'LAINNYA'
 }
 
@@ -44,7 +44,7 @@ const stats = computed(() => {
     switch (canonStatus(d.status)) {
       case 'SELESAI': acc.selesai++; break
       case 'RENCANA': acc.rencana++; break
-      case 'SEDANG BERLANGSUNG': acc.berlangsung++; break
+      case 'ON GOING': acc.berlangsung++; break
       default: acc.lainnya++; break
     }
   }
@@ -55,8 +55,8 @@ const stats = computed(() => {
 const statusOptions = computed(() => {
   const set = new Set<string>()
   raw.value.forEach(d => set.add(canonStatus(d.status))) // ambil yang ada di data
-  ;['SEDANG BERLANGSUNG','SELESAI','RENCANA','LAINNYA'].forEach(s => set.add(s)) // pastikan ada
-  const order = ['SEDANG BERLANGSUNG','SELESAI','RENCANA','LAINNYA']
+  ;['ON GOING','SELESAI','RENCANA','LAINNYA'].forEach(s => set.add(s)) // pastikan ada
+  const order = ['ON GOING','SELESAI','RENCANA','LAINNYA']
   return Array.from(set).sort((a,b) => order.indexOf(a) - order.indexOf(b))
 })
 
@@ -117,7 +117,7 @@ const typeOptions = computed(() =>
 
     <section class="stats">
       <StatCard label="Total Kejadian" :value="stats.total" />
-      <StatCard label="Sedang Berlangsung" :value="stats.berlangsung" />
+      <StatCard label="On Going" :value="stats.berlangsung" />
       <StatCard label="Selesai" :value="stats.selesai" />
       <StatCard label="Rencana" :value="stats.rencana" />
     </section>
