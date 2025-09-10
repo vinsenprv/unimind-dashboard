@@ -65,12 +65,12 @@ const stats = computed(() => {
 // ----------------------
 const statusOptions = computed(() => {
   const set = new Set<string>()
-  raw.value.forEach(d => {
-    const c = canonStatus(d.status)
-    if (c !== 'LAINNYA') set.add(c)
-  })
-  return Array.from(set).sort()
+  raw.value.forEach(d => set.add(canonStatus(d.status))) // ambil yang ada di data
+  ;['SEDANG BERLANGSUNG','SELESAI','RENCANA','LAINNYA'].forEach(s => set.add(s)) // pastikan ada
+  const order = ['SEDANG BERLANGSUNG','SELESAI','RENCANA','LAINNYA']
+  return Array.from(set).sort((a,b) => order.indexOf(a) - order.indexOf(b))
 })
+
 
 // ----------------------
 // 6) Lifecycle & actions
