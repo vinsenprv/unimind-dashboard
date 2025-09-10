@@ -1,4 +1,3 @@
-// composables/useUnimind.ts
 import { ref, computed } from 'vue'
 import { useRuntimeConfig } from '#app'
 
@@ -74,7 +73,7 @@ function parseDateSmart(s: any): string {
     return `${Y}-${M.padStart(2, '0')}-${D.padStart(2, '0')}`
   }
 
-  // DD MM YYYY (MM angka atau nama bulan Indonesia)
+  // DD MM YYYY
   const m2 = raw.match(/^(\d{1,2})\s+([A-Za-z\.]+|\d{1,2})\s+(\d{4})/) as RegExpMatchArray | null
   if (m2) {
     const [, dRaw, mRaw, yRaw] = m2 as unknown as [string, string, string, string]
@@ -157,7 +156,7 @@ function transform(row: any): Incident {
   let description = (typeof descriptionAny === 'string' ? descriptionAny : String(descriptionAny ?? '')).trim()
   if (!description) description = fasJenis && fasDetail ? `${fasJenis}: ${fasDetail}` : (fasJenis || fasDetail)
 
-  // link artikel → pastikan string | undefined
+  // link artikel
   const urlAny = pickKey(row, ['link_article_last','link_article_continue','article_url','url','link'])
   const url = (typeof urlAny === 'string' && urlAny.trim()) ? urlAny : undefined
 

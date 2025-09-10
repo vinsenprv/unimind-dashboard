@@ -1,4 +1,3 @@
-<!-- components/MapView.vue -->
 <script setup lang="ts">
 import { LMap, LTileLayer, LCircleMarker, LPopup, LControl } from '@vue-leaflet/vue-leaflet'
 import * as L from 'leaflet'
@@ -25,7 +24,6 @@ const mapRef = ref<any>(null)
 const center: [number, number] = [-2.5, 117] // tengah Indonesia
 const zoom = 5
 
-// Perbaikan path icon leaflet (aman walau kita pakai circle marker)
 delete (L.Icon.Default as any).prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -33,7 +31,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Helper status (kanonisasi)
 function canonStatus(s: any = ''): 'SELESAI'|'RENCANA'|'SEDANG BERLANGSUNG'|'LAINNYA' {
   const v = String(s || '').toLowerCase().trim()
   if (/(selesai|resolved|done)/.test(v)) return 'SELESAI'

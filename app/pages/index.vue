@@ -1,4 +1,3 @@
-<!-- pages/index.vue -->
 <script setup lang="ts">
 import MapView from '~/components/MapView.vue'
 import StatCard from '~/components/StatCard.vue'
@@ -7,16 +6,12 @@ import { useUnimind } from '~/composables/useUnimind'
 
 const { raw, fetchRaw, loading, error, uniqueTypes, uniqueStatuses } = useUnimind()
 
-// ----------------------
-// 1) State filter
-// ----------------------
+// State filter
 const jenis   = ref<string>('ALL')
 const status  = ref<string>('ALL')
 const tanggal = ref<string>('') // HTML date => YYYY-MM-DD
 
-// ----------------------
-// 2) Helper: kanonisasi status (wajib dideklarasikan SEBELUM dipakai)
-// ----------------------
+// Helper: kanonisasi status
 function canonStatus(s = '') {
   const v = s.toLowerCase().trim()
   if (/(selesai|resolved|done)/.test(v)) return 'SELESAI'
@@ -25,9 +20,7 @@ function canonStatus(s = '') {
   return 'LAINNYA'
 }
 
-// ----------------------
-// 3) Data terfilter
-// ----------------------
+// Data terfilter
 const filtered = computed(() => {
   const j = (jenis.value  || 'ALL').toLowerCase().trim()
   const s = (status.value || 'ALL').toLowerCase().trim()
@@ -43,9 +36,7 @@ const filtered = computed(() => {
   })
 })
 
-// ----------------------
-// 4) Stats akurat berbasis kanonisasi
-// ----------------------
+// Stats akurat berbasis kanonisasi
 const stats = computed(() => {
   const acc = { total: 0, berlangsung: 0, selesai: 0, rencana: 0, lainnya: 0 }
   for (const d of filtered.value) {
@@ -60,9 +51,7 @@ const stats = computed(() => {
   return acc
 })
 
-// ----------------------
-// 5) Opsi status (kanonis) untuk dropdown (opsional)
-// ----------------------
+// Opsi status (kanonis) untuk dropdown (opsional)
 const statusOptions = computed(() => {
   const set = new Set<string>()
   raw.value.forEach(d => set.add(canonStatus(d.status))) // ambil yang ada di data
@@ -72,9 +61,7 @@ const statusOptions = computed(() => {
 })
 
 
-// ----------------------
-// 6) Lifecycle & actions
-// ----------------------
+// Lifecycle & actions
 onMounted(async () => {
   await fetchRaw()
   // debug cepat

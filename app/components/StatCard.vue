@@ -1,4 +1,3 @@
-<!-- components/StatCard.vue -->
 <script setup lang="ts">
 defineProps<{ label: string; value: number }>()
 </script>
