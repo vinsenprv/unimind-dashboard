@@ -130,36 +130,52 @@ const typeOptions = computed(() =>
 </template>
 
 <style scoped>
-.container { max-width: 1200px; margin: 0 auto; padding: 18px; }
+/* Container lebar nyaman di desktop ultra-wide */
+.container { 
+  max-width: 1200px; 
+  margin: 0 auto; 
+  padding: clamp(12px, 2vw, 18px); 
+}
 
 /* ---- Header bar full width ---- */
 .headerbar {
   background: linear-gradient(90deg, #2c4f6b, #338cc8);
-  padding: 14px 0;
+  padding: 12px 0;
   text-align: center;
-  border-radius: 4px 4px 0 0;
+  border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
-.headerbar h1 { margin: 0; font-size: 16px; font-weight: 600; color: #fff; }
+.headerbar h1 { 
+  margin: 0; 
+  font-weight: 700; 
+  color: #fff; 
+  font-size: clamp(14px, 2.2vw, 22px);
+  line-height: 1.25;
+}
 
+/* Kartu */
 .card {
-  background: white; border: 1px solid #eee; border-radius: 14px; padding: 14px;
+  background: white; border: 1px solid #eee; border-radius: 14px; padding: clamp(12px, 2vw, 16px);
   box-shadow: 0 6px 20px rgba(0,0,0,.04);
 }
 
-/* ---- Layout filter: 3 field + 1 tombol ---- */
+/* ---- FILTERS: auto-fit ke lebar layar ---- */
 .filters{
   display: grid;
-  grid-template-columns: repeat(3, minmax(240px,1fr)) 180px;
-  gap: 16px 20px;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px clamp(12px, 2vw, 20px);
   align-items: end;
 }
+.field{ 
+  display:flex; flex-direction:column; gap:6px; 
+  grid-column: span 3; /* 4 field x 3 kolom = 12 kolom */
+}
+.filters .btn.refresh{
+  grid-column: span 3;
+}
 
-/* Field & label */
-.field{ display:flex; flex-direction:column; gap:6px; }
+/* Label & kontrol */
 .field label{ font-size:12px; color:#374151; font-weight:600; }
-
-/* Samakan tinggi semua kontrol */
 select, input[type="date"], input[type="text"], input[type="search"]{
   width:100%; height:44px; padding:10px 12px; border-radius:10px;
   border:1px solid #d1d5db; background:#f9fafb; box-sizing:border-box;
@@ -168,20 +184,46 @@ select, input[type="date"], input[type="text"], input[type="search"]{
 /* Tombol refresh */
 .btn.refresh{
   height:44px; padding:0 20px; display:flex; align-items:center; justify-content:center;
-  background:#22c55e; color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer; align-self:end;
+  background:#22c55e; color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer;
 }
 .btn.refresh:hover{ opacity:.9; }
 
-.mapwrap { padding: 8px; }
+/* ---- MAP wrapper: padding kecil di HP ---- */
+.mapwrap { padding: clamp(6px, 1.2vw, 8px); }
 
+/* ---- STATS: 4 kolom di desktop, turun di tablet/HP ---- */
 .stats {
-  display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 14px;
+  display: grid; 
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: clamp(10px, 1.4vw, 14px); 
+  margin-top: 14px;
 }
 
+/* Notif */
 .note { margin-top: 10px; color:#374151; }
 .note.error { color:#b91c1c; }
 
-/* Responsif */
-@media (max-width: 1100px){ .filters{ grid-template-columns: repeat(2, minmax(240px,1fr)); } }
-@media (max-width: 640px){ .filters{ grid-template-columns: 1fr; } }
+/* ====== RESPONSIVE BREAKPOINTS ====== */
+
+/* ≤ 1100px: Filters jadi 2 kolom (span 6) */
+@media (max-width: 1100px){
+  .filters .field{ grid-column: span 6; }
+  .filters .btn.refresh{ grid-column: span 6; }
+}
+
+/* ≤ 768px: Filters jadi 1 kolom penuh */
+@media (max-width: 768px){
+  .filters{ grid-template-columns: repeat(6, 1fr); }
+  .filters .field, .filters .btn.refresh{ grid-column: 1 / -1; }
+}
+
+/* ≤ 1024px: stats turun ke 2 kolom */
+@media (max-width: 1024px){
+  .stats { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+}
+
+/* ≤ 520px: stats 1 kolom; font angka mengecil */
+@media (max-width: 520px){
+  .stats { grid-template-columns: 1fr; }
+}
 </style>

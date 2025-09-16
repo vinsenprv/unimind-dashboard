@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { LMap, LTileLayer, LCircleMarker, LPopup, LControl } from '@vue-leaflet/vue-leaflet'
 import * as L from 'leaflet'
-import { watch, ref, onMounted } from 'vue'
+import { watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import 'leaflet/dist/leaflet.css'
 
 type Incident = {
   id: string
@@ -66,12 +67,39 @@ function fitToItems(list: Incident[]) {
     map.setView(center, zoom)
   }
 }
-onMounted(() => fitToItems(props.items))
+
+let resizeTimer: number | undefined
+function onResize() {
+  const map: L.Map | undefined = mapRef.value?.leafletObject
+  if (!map) return
+  // debounce ringan
+  window.clearTimeout(resizeTimer)
+  resizeTimer = window.setTimeout(() => {
+    map.invalidateSize()
+    // re-fit sedikit setelah invalidate supaya nyaman
+    fitToItems(props.items)
+  }, 150)
+}
+onMounted(async () => {
+  await nextTick()
+  fitToItems(props.items)
+  window.addEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
+
 watch(() => props.items, (list) => fitToItems(list), { deep: false })
 </script>
 
 <template>
-  <LMap ref="mapRef" :zoom="zoom" :center="center" style="height:520px; border-radius:12px; overflow:hidden;">
+  <LMap
+    ref="mapRef"
+    :zoom="zoom"
+    :center="center"
+    style="height: clamp(320px, 56vh, 560px); border-radius:12px; overflow:hidden;"
+  >
     <LTileLayer
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       attribution="&copy; OpenStreetMap contributors"
@@ -121,14 +149,17 @@ watch(() => props.items, (list) => fitToItems(list), { deep: false })
 </template>
 
 <style scoped>
-.popup { width: 320px; }
+
+
+/* Popup & legend styles (tetap) */
+.popup { width: min(86vw, 320px); } /* aman di HP kecil */
 .popup h4 { margin: 0 0 .5rem 0; font-weight: 800; font-size: 18px; color:#1e3a8a; position:relative; padding-right:18px; }
 .popup h4::after{
   content:""; display:block; height:3px; margin-top:8px;
   background: linear-gradient(90deg,#1e3a8a,#2f7cc3,#3ea0e8); border-radius:2px;
 }
 .popup .row { display:flex; gap:.5rem; margin:.35rem 0; line-height:1.35; }
-.popup .row span:first-child { color:#6b7280; min-width: 140px; font-weight:600; }
+.popup .row span:first-child { color:#6b7280; min-width: 120px; font-weight:600; }
 .popup .row b { color:#374151; font-weight:600; }
 
 .badge { display:inline-block; padding:.18rem .6rem; border-radius:999px; font-size:.82rem; background:#e5e7eb; color:#111827; line-height:1.2; }
@@ -144,6 +175,7 @@ watch(() => props.items, (list) => fitToItems(list), { deep: false })
 .legend{
   background:#fff; border-radius:8px; padding:8px 10px;
   box-shadow:0 4px 16px rgba(0,0,0,.15); font-size:12px; color:#111827;
+  max-width: 60vw; /* biar gak melebar di HP */
 }
 .legend .item{ display:flex; align-items:center; gap:8px; margin:4px 0; }
 .legend .dot{ width:12px; height:12px; border-radius:999px; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.15); }
@@ -154,4 +186,9 @@ watch(() => props.items, (list) => fitToItems(list), { deep: false })
 }
 :deep(.leaflet-popup-content){ margin:10px 12px; }
 :deep(.leaflet-popup-close-button){ color:#6b7280; font-weight:700; }
+
+/* HP kecil: rapatkan label di popup */
+@media (max-width: 420px){
+  .popup .row span:first-child { min-width: 96px; }
+}
 </style>
